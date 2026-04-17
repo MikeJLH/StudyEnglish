@@ -1,0 +1,16 @@
+{
+  "name": "AI 英语明信片",
+  "short_name": "英语助手",
+  "description": "基于 AI 的英语单词学习明信片",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#f0f2f5",
+  "theme_color": "#4a90e2",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3429/3429150.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
