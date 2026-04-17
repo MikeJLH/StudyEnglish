@@ -3,57 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI 英语助手 - 音标增强版</title>
+    <title>AI 英语助手 - 离线词库增强版</title>
     <link rel="manifest" href="manifest.json">
+    
+    <!-- 【关键：引入你的离线库文件】 -->
+    <script src="dict.js"></script>
+
     <meta name="theme-color" content="#4a90e2">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
     <style>
-        body { font-family: -apple-system, sans-serif; background-color: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 15px; margin: 0; min-height: 100vh; }
-        #input-area { width: 95%; max-width: 500px; background: white; padding: 15px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        textarea { width: 100%; height: 120px; padding: 12px; border-radius: 12px; border: 1px solid #eee; font-size: 15px; box-sizing: border-box; background: #fafafa; outline: none; line-height: 1.5; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 15px; margin: 0; min-height: 100vh; -webkit-tap-highlight-color: transparent; }
+        #input-area { width: 100%; max-width: 500px; background: white; padding: 15px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); box-sizing: border-box; }
+        textarea { width: 100%; height: 140px; padding: 12px; border-radius: 12px; border: 1px solid #eee; font-size: 14px; box-sizing: border-box; background: #fafafa; line-height: 1.5; outline: none; }
         .btn-group { margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        button { padding: 14px; cursor: pointer; border: none; border-radius: 12px; font-weight: bold; font-size: 14px; color: white; transition: 0.2s; }
+        button { padding: 12px; cursor: pointer; border: none; border-radius: 12px; font-weight: bold; font-size: 14px; color: white; transition: 0.2s; }
         .btn-translate { background-color: #f39c12; }
         .btn-parse { background-color: #4a90e2; }
         .btn-save { background-color: #6f42c1; }
         .btn-listen { background-color: #34c759; }
         .btn-stop { background-color: #ff3b30; grid-column: span 2; }
-        #status { margin: 10px 0; font-size: 14px; color: #f39c12; font-weight: bold; text-align: center; min-height: 20px; }
-        #card-container { width: 100%; max-width: 340px; height: 380px; perspective: 1000px; margin-top: 10px; display: none; }
-        .card { width: 100%; height: 100%; position: relative; transition: transform 0.5s; transform-style: preserve-3d; }
+        #full-translation-box { margin-top: 10px; padding: 12px; background: #fdf6ec; border-radius: 10px; font-size: 14px; display: none; border-left: 4px solid #f39c12; }
+        #card-container { width: 100%; max-width: 340px; height: 460px; perspective: 1000px; margin-top: 20px; display: none; }
+        .card { width: 100%; height: 100%; position: relative; transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1); transform-style: preserve-3d; }
         .card.is-flipped { transform: rotateY(180deg); }
-        .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; background: white; border-radius: 25px; padding: 20px; box-sizing: border-box; box-shadow: 0 8px 20px rgba(0,0,0,0.1); display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid #eee; }
-        .card-back { transform: rotateY(180deg); overflow-y: auto; justify-content: flex-start; padding-top: 40px; }
-        .word-title { font-size: 38px; font-weight: bold; color: #2c3e50; }
-        .phonetic { color: #95a5a6; font-size: 18px; margin-top: 8px; height: 25px; }
-        .meaning-text { font-size: 18px; color: #444; margin-top: 10px; text-align: center; line-height: 1.5; }
+        .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; background: white; border-radius: 30px; padding: 30px; box-sizing: border-box; box-shadow: 0 10px 30px rgba(0,0,0,0.08); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .card-back { transform: rotateY(180deg); overflow-y: auto; justify-content: flex-start; }
+        .word-title { font-size: 42px; font-weight: 800; color: #2c3e50; }
+        .phonetic { color: #95a5a6; font-size: 18px; margin-bottom: 20px; }
+        .pos-badge { display: inline-block; background: #e1f5fe; color: #0288d1; padding: 4px 12px; border-radius: 8px; font-size: 13px; font-weight: bold; margin: 10px 0 5px 0; }
+        .meaning-text { font-size: 18px; color: #34495e; line-height: 1.6; text-align: center; }
+        #notebook-area { width: 100%; max-width: 500px; margin-top: 30px; }
+        .notebook-title { font-size: 16px; font-weight: bold; padding: 0 10px; margin-bottom: 10px; display: flex; justify-content: space-between; }
+        #notebook-list { display: flex; overflow-x: auto; gap: 10px; padding: 5px; scrollbar-width: none; }
+        .word-tag { flex: 0 0 auto; background: white; padding: 8px 15px; border-radius: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); font-size: 14px; color: #6f42c1; display: flex; align-items: center; gap: 5px; }
+        #status { margin-top: 15px; font-size: 13px; color: #f39c12; text-align: center; height: 20px; font-weight: bold; }
+        .playing-now { border: 3px solid #34c759 !important; }
         .nav-btns { display: none; margin-top: 15px; gap: 20px; align-items: center; }
-        .nav-btns button { background: #95a5a6; width: 90px; padding: 10px; }
-        #notebook-area { width: 100%; max-width: 500px; margin-top: 25px; padding-bottom: 30px; }
-        #notebook-list { display: flex; overflow-x: auto; gap: 8px; padding: 10px 0; }
-        .word-tag { flex: 0 0 auto; background: white; padding: 6px 12px; border-radius: 12px; font-size: 13px; color: #6f42c1; border: 1px solid #eee; }
+        .nav-btns button { background: #95a5a6; width: 80px; padding: 8px; }
     </style>
 </head>
 <body>
 
     <div id="input-area">
-        <textarea id="textInput" placeholder="示例：&#10;1. 自动查询：love like&#10;2. 手动定义：apple n 苹果, banana n 香蕉&#10;3. 双语翻译：输入句子或中文"></textarea>
-        <div id="status"></div>
+        <textarea id="textInput" placeholder="输入方式示例：&#10;1. 纯单词(空格隔开)：apple banana (优先搜索离线库)&#10;2. 手动模式：apple n 苹果 (直接制作)&#10;3. 双向翻译：直接输入段落进行翻译"></textarea>
+        <div id="full-translation-box"></div>
         <div class="btn-group">
-            <button class="btn-translate" onclick="translateFullText()">智能双向翻译</button>
+            <button class="btn-translate" onclick="translateFullText()">智能翻译</button>
             <button class="btn-parse" onclick="processText()">制作明信片</button>
             <button class="btn-save" onclick="saveToNotebook()">存入生词本</button>
-            <button class="btn-listen" id="listenBtn" onclick="startListening()">开启自动播放</button>
+            <button class="btn-listen" id="listenBtn" onclick="startListening()">自动播放</button>
             <button class="btn-stop" onclick="stopListening()">停止</button>
         </div>
     </div>
 
+    <div id="status"></div>
+
     <div id="card-container">
         <div class="card" id="card" onclick="this.classList.toggle('is-flipped')">
-            <div class="card-face card-front">
+            <div class="card-face card-front" id="card-front-ui">
                 <div class="word-title" id="display-word">Word</div>
-                <div class="phonetic" id="display-phonetic"></div>
-                <div style="margin-top:40px; color:#ddd; font-size:12px;">点击翻转</div>
+                <div class="phonetic" id="display-phonetic">/音标/</div>
+                <div style="margin-top: 40px; color: #eee; font-size: 12px;">← 左右滑动 · 点击翻转 →</div>
             </div>
             <div class="card-face card-back" id="display-meanings-list"></div>
         </div>
@@ -66,58 +78,28 @@
     </div>
 
     <div id="notebook-area">
-        <div style="font-weight:bold; font-size:14px;">📚 生词本 <span onclick="clearAllNotebook()" style="float:right; color:#999; font-size:12px;">清空</span></div>
+        <div class="notebook-title">📚 我的生词本 <span onclick="clearAllNotebook()" style="color:#95a5a6; font-size:12px;">清空</span></div>
         <div id="notebook-list"></div>
     </div>
 
     <script>
         if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
+
         let wordsList = [];
         let currentIndex = 0;
-        let isGlobalSpeaking = false;
+        let isGlobalSpeaking = false; 
         const synth = window.speechSynthesis;
+        const posToCN = { 'n': '名词', 'v': '动词', 'adj': '形容词', 'adv': '副词' };
 
-        // 核心翻译函数（优化后）
-        async function getTranslation(text) {
-            const hasChinese = /[\u4e00-\u9fa5]/.test(text);
-            const sl = hasChinese ? 'zh-CN' : 'en';
-            const tl = hasChinese ? 'en' : 'zh-CN';
-            try {
-                // 优先尝试谷歌镜像
-                const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sl}&tl=${tl}&dt=t&q=${encodeURIComponent(text)}`);
-                const data = await res.json();
-                return data[0][0][0];
-            } catch (e) {
-                // 备用方案
-                return "翻译接口繁忙，请重试";
-            }
-        }
-
-        async function translateFullText() {
-            const text = document.getElementById('textInput').value.trim();
-            if (!text) return alert("请输入内容");
-            const status = document.getElementById('status');
-            status.innerText = "⏳ 智能翻译中...";
-            const res = await getTranslation(text);
-            alert("翻译结果：\n" + res);
-            status.innerText = "";
-        }
-
-        // 仅抓取音标的辅助函数
-        async function fetchPhoneticOnly(word) {
-            try {
-                const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
-                const data = await res.json();
-                return data[0]?.phonetic || "";
-            } catch (e) { return ""; }
-        }
-
+        // 离线优先解析核心逻辑
         async function processText() {
+            stopListening();
             const rawText = document.getElementById('textInput').value.trim();
             if (!rawText) return;
             const status = document.getElementById('status');
+            status.innerText = "正在分析单词...";
             wordsList = [];
-
+            
             const segments = rawText.split(/[,\n;，；]/).filter(s => s.trim() !== "");
 
             for (let seg of segments) {
@@ -125,26 +107,33 @@
                 const hasChinese = /[\u4e00-\u9fa5]/.test(seg);
 
                 if (hasChinese) {
+                    // 1. 人工模式 (完全离线)
                     const match = seg.match(/^([a-zA-Z\-]+)\s+([a-zA-Z]+\.?)\s+([\u4e00-\u9fa5\s]+)$/);
                     if (match) {
-                        const wordObj = { word: match[1], phonetic: "...", items: [{ pos: match[2], meaning: match[3].trim() }] };
-                        wordsList.push(wordObj);
-                        // 【创新逻辑】后台偷偷补音标
-                        fetchPhoneticOnly(match[1]).then(ph => {
-                            wordObj.phonetic = ph;
-                            if (wordsList[currentIndex]?.word === wordObj.word) {
-                                document.getElementById('display-phonetic').innerText = ph;
-                            }
+                        wordsList.push({ 
+                            word: match[1], 
+                            phonetic: window.localDict?.[match[1].toLowerCase()]?.p || "", 
+                            items: [{ pos: match[2], meaning: match[3] }] 
                         });
-                    } else {
-                        alert(`🚨 格式有误：\n"${seg}"\n每个定义之间请用逗号隔开。`);
-                        return;
                     }
                 } else {
-                    status.innerText = "🔍 正在联网查询...";
+                    // 2. 自动提取模式 (离线库优先)
                     const words = seg.match(/[a-zA-Z\-]+/g) || [];
                     for (let w of words) {
-                        if (w.length > 1) await fetchAndAddWord(w);
+                        const lowW = w.toLowerCase();
+                        if (window.localDict && window.localDict[lowW]) {
+                            // 【离线命中了！】秒出数据
+                            const d = window.localDict[lowW];
+                            wordsList.push({ 
+                                word: w, 
+                                phonetic: d.p || "", 
+                                items: [{ pos: d.pos || "word", meaning: d.m }] 
+                            });
+                        } else {
+                            // 离线库没搜到，再尝试联网 (兜底)
+                            status.innerText = `🔍 离线库未找到 ${w}，尝试联网...`;
+                            await fetchAndAddWordOnline(w);
+                        }
                     }
                 }
             }
@@ -153,21 +142,23 @@
                 document.getElementById('card-container').style.display = 'block';
                 document.getElementById('nav-btns').style.display = 'flex';
                 showCard(0);
-                status.innerText = `✅ 生成成功 (${wordsList.length})`;
+                status.innerText = `✅ 生成成功：${wordsList.length} 张卡片 (已启用离线词库)`;
             }
         }
 
-        async function fetchAndAddWord(word) {
+        // 联网兜底查询
+        async function fetchAndAddWordOnline(word) {
             try {
                 const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
                 const data = await res.json();
                 if (data[0]) {
                     const m = data[0].meanings[0];
-                    const cn = await getTranslation(m.definitions[0].definition);
+                    const transRes = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=zh-CN&dt=t&q=${encodeURIComponent(m.definitions[0].definition)}`);
+                    const cnData = await transRes.json();
                     wordsList.push({ 
                         word: word, 
                         phonetic: data[0].phonetic || "", 
-                        items: [{ pos: m.partOfSpeech, meaning: cn.split(/[，；。;]/)[0] }] 
+                        items: [{ pos: m.partOfSpeech, meaning: cnData[0][0][0].split(/[，；。;]/)[0] }] 
                     });
                 }
             } catch (e) {}
@@ -177,12 +168,12 @@
             currentIndex = index;
             const item = wordsList[index];
             document.getElementById('display-word').innerText = item.word;
-            document.getElementById('display-phonetic').innerText = item.phonetic;
+            document.getElementById('display-phonetic').innerText = item.phonetic || "";
             const list = document.getElementById('display-meanings-list');
             list.innerHTML = "";
             item.items.forEach(it => {
                 const div = document.createElement('div');
-                div.innerHTML = `<div style="color:#0288d1;font-weight:bold;margin-bottom:5px;">[${it.pos}]</div><div class="meaning-text">${it.meaning}</div>`;
+                div.innerHTML = `<span class="pos-badge">${it.pos}</span><div class="meaning-text">${it.meaning}</div>`;
                 list.appendChild(div);
             });
             document.getElementById('card-count').innerText = `${index + 1} / ${wordsList.length}`;
@@ -192,12 +183,27 @@
         function nextCard() { if(currentIndex < wordsList.length - 1) showCard(currentIndex + 1); }
         function prevCard() { if(currentIndex > 0) showCard(currentIndex - 1); }
 
+        async function translateFullText() {
+            const text = document.getElementById('textInput').value.trim();
+            if (!text) return;
+            const box = document.getElementById('full-translation-box');
+            box.style.display = "block";
+            box.innerText = "翻译中...";
+            try {
+                const hasChinese = /[\u4e00-\u9fa5]/.test(text);
+                const sl = hasChinese ? 'zh-CN' : 'en', tl = hasChinese ? 'en' : 'zh-CN';
+                const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sl}&tl=${tl}&dt=t&q=${encodeURIComponent(text)}`;
+                const res = await fetch(url);
+                const data = await res.json();
+                box.innerText = "翻译结果：" + data[0][0][0];
+            } catch (e) { box.innerText = "翻译失败，请检查网络"; }
+        }
+
         function saveToNotebook() {
             let n = JSON.parse(localStorage.getItem('myVocab')) || [];
             wordsList.forEach(w => { if(!n.some(x => x.word === w.word)) n.push(w); });
             localStorage.setItem('myVocab', JSON.stringify(n));
             renderNotebook();
-            document.getElementById('status').innerText = "✅ 已存入生词本";
         }
 
         function renderNotebook() {
@@ -207,7 +213,7 @@
             n.forEach((item, i) => {
                 const tag = document.createElement('div');
                 tag.className = 'word-tag';
-                tag.innerHTML = `<span onclick="reviewWord(${i})">${item.word}</span><span style="margin-left:5px;color:#ccc" onclick="deleteWord(${i})">×</span>`;
+                tag.innerHTML = `<span onclick="reviewWord(${i})">${item.word}</span><span style="color:#ccc" onclick="deleteWord(${i})">×</span>`;
                 list.appendChild(tag);
             });
         }
@@ -235,10 +241,11 @@
             for (let i = currentIndex; i < wordsList.length; i++) {
                 if (!isGlobalSpeaking) break;
                 showCard(i);
-                await speak(wordsList[i].word, 'en-US', 0.8);
+                const item = wordsList[i];
+                await speak(item.word, 'en-US', 0.8);
                 await sleep(500);
-                await speak(wordsList[i].word.split('').join(', '), 'en-US', 0.4);
-                for (let it of wordsList[i].items) {
+                await speak(item.word.split('').join(', '), 'en-US', 0.4);
+                for (let it of item.items) {
                     await speak(`词性 ${it.pos}，意思 ${it.meaning}`, 'zh-CN', 0.9);
                 }
                 await sleep(1000);
