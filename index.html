@@ -161,6 +161,12 @@ body {
             status.innerText = "正在分析单词...";
             wordsList = [];
 
+            // 检查词库是否加载
+            if (!window.localDict) {
+                alert("词库还在加载中，请稍后再试");
+                return;
+            }
+
             const segments = rawText.split(/[,\n;，；]/).filter(s => s.trim() !== "");
 
             for (let seg of segments) {
@@ -168,21 +174,26 @@ body {
                 const hasChinese = /[\u4e00-\u9fa5]/.test(seg);
 
                 if (hasChinese) {
-                    // 人工模式
                     const match = seg.match(/^([a-zA-Z\-]+)\s+([a-zA-Z]+\.?)\s+([\u4e00-\u9fa5\s]+)$/);
                     if (match) {
+                        // 兼容性修改：移除 ?. 写法
+                        let wordKey = match[1].toLowerCase();
+                        let phonetic = "";
+                        if (window.localDict[wordKey]) {
+                            phonetic = window.localDict[wordKey].p || "";
+                        }
                         wordsList.push({ 
                             word: match[1], 
-                            phonetic: window.localDict?.[match[1].toLowerCase()]?.p || "", 
+                            phonetic: phonetic, 
                             items: [{ pos: convertPos(match[2]), meaning: match[3] }] 
                         });
                     }
                 } else {
-                    // 自动模式
                     const words = seg.match(/[a-zA-Z\-]+/g) || [];
                     for (let w of words) {
                         const lowW = w.toLowerCase();
-                        if (window.localDict && window.localDict[lowW]) {
+                        // 兼容性修改：移除 ?. 写法
+                        if (window.localDict[lowW]) {
                             const d = window.localDict[lowW];
                             wordsList.push({ 
                                 word: w, 
@@ -190,12 +201,25 @@ body {
                                 items: [{ pos: convertPos(d.pos), meaning: d.m }] 
                             });
                         } else {
-                            status.innerText = `🔍 联网查询并翻译: ${w}...`;
+                            status.innerText = "🔍 联网查询: " + w + "...";
                             await fetchAndAddWordOnline(w);
                         }
                     }
                 }
             }
+
+            if (wordsList.length > 0) {
+                document.getElementById('card-container').style.display = 'block';
+                document.getElementById('nav-btns').style.display = 'flex';
+                showCard(0);
+                status.innerText = "✅ 生成成功 (" + wordsList.length + ")";
+                
+                // 自动滚动到下方
+                setTimeout(() => {
+                    document.getElementById('card-container').scrollIntoView({ behavior: 'smooth' });
+                }, 300);
+            }
+        }
 
          if (wordsList.length > 0) {
                 document.getElementById('card-container').style.display = 'block';
@@ -208,7 +232,6 @@ body {
                     document.getElementById('card-container').scrollIntoView({ behavior: 'smooth' });
                 }, 100); 
             }
-        }
 
         async function fetchAndAddWordOnline(word) {
             try {
