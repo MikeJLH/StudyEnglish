@@ -7,8 +7,7 @@
     <link rel="manifest" href="manifest.json">
     
     <!-- 引入你的离线词库 -->
-    <script src="dict.js"></script>
-
+    
 <style>
 body { 
     font-family: -apple-system, sans-serif; 
@@ -116,11 +115,35 @@ body {
             return posMap[k] || p;
         }
 
+        // 定义全局词库变量
+        window.localDict = null;
+
+        // 新的加载词库函数
+        function loadDictionary() {
+            const statusEl = document.getElementById('dict-status');
+            
+            // 使用 fetch 异步获取 dict.json
+            fetch('dict.json')
+                .then(response => {
+                    if (!response.ok) throw new Error('找不到 dict.json 文件');
+                    return response.json();
+                })
+                .then(data => {
+                    window.localDict = data; // 赋值给全局变量
+                    statusEl.innerText = "✅ 离线词库已就绪";
+                    statusEl.style.color = "#34c759";
+                    console.log("词库加载成功");
+                })
+                .catch(err => {
+                    console.error("加载词库失败:", err);
+                    statusEl.innerText = "❌ 词库加载失败 (请检查网络或文件名)";
+                    statusEl.style.color = "#ff3b30";
+                });
+        }
+
         window.onload = () => {
-            if (window.localDict) {
-                document.getElementById('dict-status').innerText = "✅ 离线词库已就绪";
-                document.getElementById('dict-status').style.color = "#34c759";
-            }
+            // 页面加载后立即启动异步下载
+            loadDictionary();
             renderNotebook();
         };
 
@@ -173,11 +196,16 @@ body {
                 }
             }
 
-            if (wordsList.length > 0) {
+         if (wordsList.length > 0) {
                 document.getElementById('card-container').style.display = 'block';
                 document.getElementById('nav-btns').style.display = 'flex';
                 showCard(0);
                 status.innerText = `✅ 生成成功 (${wordsList.length})`;
+
+                // --- 添加这一行：自动滚动到明信片位置 ---
+                setTimeout(() => {
+                    document.getElementById('card-container').scrollIntoView({ behavior: 'smooth' });
+                }, 100); 
             }
         }
 
